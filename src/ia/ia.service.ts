@@ -110,18 +110,7 @@ export class IaService {
   }
 
   async generarAnalisis(cultivoId: number) {
-    const hoy = new Date()
-    hoy.setHours(0, 0, 0, 0)
-    const manana = new Date(hoy)
-    manana.setDate(manana.getDate() + 1)
-
-    const analisisExistente = await this.iaAnalisisRepo.findOne({
-      where: {
-        cultivoId,
-        fecha: Between(hoy, manana) as any
-      },
-      order: { fecha: 'DESC' }
-    })
+    const analisisExistente = await this.buscarAnalisisHoy(cultivoId)
 
     if (analisisExistente) {
       this.logger.log(
@@ -142,8 +131,49 @@ export class IaService {
   }
 
   async generarAnalisisManual(cultivoId: number, datosManuales: AnalisisManualDto) {
+    const analisisExistente = await this.buscarAnalisisHoy(cultivoId)
+
+    if (analisisExistente) {
+      this.logger.log(
+        `Ya existe un análisis para el cultivo ${cultivoId} del día de hoy (Manual). Retornando análisis existente.`
+      )
+      return {
+        id: analisisExistente.id,
+        snapshot: analisisExistente.snapshot,
+        analisis_prediccion: analisisExistente.analisis,
+        origen: analisisExistente.origen,
+        es_cache: true,
+        fecha: analisisExistente.fecha
+      }
+    }
+
     const snapshot = await this.getManualSnapshot(cultivoId, datosManuales)
     return this.procesarYGuardarAnalisis(cultivoId, snapshot, 'manual')
+  }
+
+  async verificarAnalisisHoy(cultivoId: number) {
+    const analisis = await this.buscarAnalisisHoy(cultivoId)
+    return {
+      existe: !!analisis,
+      origen: analisis?.origen || null,
+      fecha: analisis?.fecha || null,
+      analisisId: analisis?.id || null
+    }
+  }
+
+  private async buscarAnalisisHoy(cultivoId: number): Promise<IaAnalisis | null> {
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+    const manana = new Date(hoy)
+    manana.setDate(manana.getDate() + 1)
+
+    return await this.iaAnalisisRepo.findOne({
+      where: {
+        cultivoId,
+        fecha: Between(hoy, manana) as any
+      },
+      order: { fecha: 'DESC' }
+    })
   }
 
   private async procesarYGuardarAnalisis(cultivoId: number, snapshot: any, origen: 'sensor' | 'manual') {

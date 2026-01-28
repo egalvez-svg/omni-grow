@@ -45,4 +45,11 @@ export class IaController {
   async obtenerAnalisisPorCama(@Param('camaId', ParseIntPipe) camaId: number) {
     return await this.iaService.getAnalisisPorCama(camaId)
   }
+
+  @Get('check/:cultivoId')
+  @ApiOperation({ summary: 'Verificar si ya existe un análisis para el cultivo hoy' })
+  @ApiResponse({ status: 200, description: 'Estado del análisis para hoy' })
+  async verificarAnalisisHoy(@Param('cultivoId', ParseIntPipe) cultivoId: number) {
+    return await this.iaService.verificarAnalisisHoy(cultivoId)
+  }
 }
