@@ -2,11 +2,13 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { hash } from 'bcryptjs'
 import { InjectRepository } from '@nestjs/typeorm'
 
+import { ConfigService } from '@nestjs/config'
+import { JwtService } from '@nestjs/jwt'
 import { Repository } from 'typeorm'
 
 import { RolService } from '../rol/rol.service'
 import { ModulosService } from '../modulos/modulos.service'
-import { MessageDto } from '../shared'
+import { MessageDto, TOKEN_EXPIRE } from '../shared'
 
 import { CreateUsuarioDto, SetRolDto, UpdateUsuarioDto, SetModulosDto } from './dto/'
 import { Usuario } from './entities/usuario.entity'
@@ -17,7 +19,9 @@ export class UsuarioService {
     @InjectRepository(Usuario)
     private readonly _usuarioRepository: Repository<Usuario>,
     private readonly _rolService: RolService,
-    private readonly _modulosService: ModulosService
+    private readonly _modulosService: ModulosService,
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService
   ) { }
 
   async create(createUsuarioDto: CreateUsuarioDto, userId: number) {
@@ -64,7 +68,7 @@ export class UsuarioService {
     return usuario
   }
 
-  async update(id: number, updateUsuarioDto: UpdateUsuarioDto, userId: number): Promise<Usuario> {
+  async update(id: number, updateUsuarioDto: UpdateUsuarioDto, userId: number): Promise<any> {
     const usuario = await this.findOne(id)
 
     if (updateUsuarioDto.password) {
@@ -72,7 +76,9 @@ export class UsuarioService {
     }
 
     Object.assign(usuario, updateUsuarioDto, { modificado_por: userId })
-    return this._usuarioRepository.save(usuario)
+    const updatedUser = await this._usuarioRepository.save(usuario)
+    const token = await this.generateToken(updatedUser)
+    return { ...updatedUser, ...token }
   }
 
   async remove(id: number, userId: number) {
@@ -107,7 +113,12 @@ export class UsuarioService {
     await this._usuarioRepository.save(usuario)
 
     const roleNames = roles.map(r => r.nombre).join(', ')
-    return new MessageDto(`Se asignaron los roles [${roleNames}] al usuario ${usuario.usuario}`)
+    const token = await this.generateToken(usuario)
+
+    return {
+      message: `Se asignaron los roles [${roleNames}] al usuario ${usuario.usuario}`,
+      ...token
+    }
   }
 
   async setModulos(id: number, modulosDto: SetModulosDto) {
@@ -127,6 +138,27 @@ export class UsuarioService {
     await this._usuarioRepository.save(usuario)
 
     const moduloNames = modulos.map(m => m.nombre).join(', ')
-    return new MessageDto(`Se asignaron los módulos [${moduloNames}] al usuario ${usuario.usuario}`)
+    const token = await this.generateToken(usuario) // Generar nuevo token con permisos actualizados
+
+    return {
+      message: `Se asignaron los módulos [${moduloNames}] al usuario ${usuario.usuario}`,
+      ...token
+    }
+  }
+
+  private async generateToken(user: Usuario) {
+    const payload = {
+      id: user.id,
+      usuario: user.usuario,
+      email: user.email,
+      roles: user.roles.map(r => r.nombre),
+      modulos: user.modulos.map(m => ({ slug: m.slug }))
+    }
+
+    const accessToken = this.jwtService.sign(payload, {
+      expiresIn: this.configService.get(TOKEN_EXPIRE) || '15m'
+    })
+
+    return { accessToken }
   }
 }
