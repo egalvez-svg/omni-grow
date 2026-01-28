@@ -154,10 +154,12 @@ export class IaService {
   async verificarAnalisisHoy(cultivoId: number) {
     const analisis = await this.buscarAnalisisHoy(cultivoId)
     return {
-      existe: !!analisis,
+      es_cache: !!analisis,
       origen: analisis?.origen || null,
       fecha: analisis?.fecha || null,
-      analisisId: analisis?.id || null
+      analisisId: analisis?.id || null,
+      analisis_prediccion: analisis?.analisis || null,
+      snapshot: analisis?.snapshot || null,
     }
   }
 

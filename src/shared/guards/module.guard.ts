@@ -19,12 +19,18 @@ export class ModuleGuard implements CanActivate {
         const { user } = context.switchToHttp().getRequest();
 
         if (!user) {
+            console.error('[ModuleGuard] No user found in request');
             return false;
         }
+
+        console.log(`[ModuleGuard] Checking access for user: ${user.usuario}`);
+        console.log(`[ModuleGuard] Required module: ${requiredModule}`);
+        console.log(`[ModuleGuard] User modules: ${JSON.stringify(user.modulos)}`);
 
         const hasModule = user.modulos?.some(m => m.slug === requiredModule);
 
         if (!hasModule) {
+            console.warn(`[ModuleGuard] Access denied. User ${user.usuario} does not have module: ${requiredModule}`);
             throw new ForbiddenException(`No tienes acceso al módulo: ${requiredModule}`);
         }
 
