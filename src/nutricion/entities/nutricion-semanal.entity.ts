@@ -49,6 +49,13 @@ export class NutricionSemanal {
   @Column({ type: 'text', nullable: true })
   notas?: string
 
+  @Column({ nullable: true })
+  faseHistorialId?: number
+
+  @ManyToOne('CultivoFaseHistorial', (h: any) => h.riegos, { nullable: true })
+  @JoinColumn({ name: 'faseHistorialId' })
+  faseHistorial?: any
+
   @OneToMany(() => ProductoRiego, pr => pr.nutricionSemanal)
   productos: ProductoRiego[]
 

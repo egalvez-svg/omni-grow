@@ -1,50 +1,42 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
-import { In, Repository } from 'typeorm'
-
-import { Cama } from '../camas/entities/cama.entity'
-import { Sala } from '../salas/entities/sala.entity'
-import { Variedad } from '../variedad/entities/variedad.entity'
+import { Not, Repository } from 'typeorm'
+import { CambiarFaseDto } from './dto/cambiar-fase.dto'
 import { VariedadService } from '../variedad/variedad.service'
 import { CreateCultivoDto } from './dto/create-cultivo.dto'
 import { UpdateCultivoDto } from './dto/update-cultivo.dto'
 import { Cultivo } from './entities/cultivo.entity'
-import { MedioCultivo } from '../medios-cultivo/entities/medio-cultivo.entity'
+import { SalasService } from '../salas/salas.service'
+import { MediosCultivoService } from '../medios-cultivo/medios-cultivo.service'
+import { FasesService } from '../fases/fases.service'
+import { CultivoFasesHistorialService } from '../cultivo-fases-historial/cultivo-fases-historial.service'
 
 @Injectable()
 export class CultivosService {
   constructor(
     @InjectRepository(Cultivo)
     private readonly cultivoRepo: Repository<Cultivo>,
-    @InjectRepository(Sala)
-    private readonly salaRepo: Repository<Sala>,
-    @InjectRepository(Variedad)
-    private readonly variedadRepo: Repository<Variedad>,
-    @InjectRepository(MedioCultivo)
-    private readonly medioCultivoRepo: Repository<MedioCultivo>,
-    private readonly variedadService: VariedadService
+    private readonly variedadService: VariedadService,
+    private readonly salasService: SalasService,
+    private readonly mediosCultivoService: MediosCultivoService,
+    private readonly fasesService: FasesService,
+    private readonly historialService: CultivoFasesHistorialService
   ) { }
 
   async create(dto: CreateCultivoDto): Promise<Cultivo> {
     const { variedadIds, ...cultivoData } = dto
 
     // Validar que la sala existe
-    const sala = await this.salaRepo.findOne({ where: { id: dto.salaId } })
-    if (!sala) {
-      throw new NotFoundException(`Sala con ID ${dto.salaId} no encontrada`)
-    }
+    await this.salasService.findOne(dto.salaId)
 
     // Validar y obtener las variedades
-    const variedades = await this.variedadRepo.find({
-      where: { id: In(variedadIds) }
-    })
-    if (variedades.length !== variedadIds.length) {
-      throw new NotFoundException('Una o más variedades no fueron encontradas')
-    }
+    const variedades = await Promise.all(
+      variedadIds.map(id => this.variedadService.findOne(id))
+    )
 
     // Validar medio de cultivo si se proporciona
     if (dto.medioCultivoId) {
-      const medio = await this.medioCultivoRepo.findOne({ where: { id: dto.medioCultivoId } })
+      const medio = await this.mediosCultivoService.findOne(dto.medioCultivoId)
       if (!medio) {
         throw new NotFoundException(`Medio de cultivo con ID ${dto.medioCultivoId} no encontrado`)
       }
@@ -54,7 +46,14 @@ export class CultivosService {
       ...cultivoData,
       variedades
     })
-    return await this.cultivoRepo.save(cultivo)
+    const savedCultivo = await this.cultivoRepo.save(cultivo)
+
+    // Si se especificó una fase inicial, crear el historial
+    if (dto.faseId) {
+      await this.transicionarFase(savedCultivo.id, { nuevaFaseId: dto.faseId, notas: 'Fase inicial' })
+    }
+
+    return await this.findOne(savedCultivo.id)
   }
 
   async findAll(): Promise<Cultivo[]> {
@@ -65,9 +64,12 @@ export class CultivosService {
   }
 
   async findActivos(): Promise<Cultivo[]> {
+    // Buscar la fase "finalizado" para excluirla
+    const faseFinalizado = await this.fasesService.findBySlug('finalizado')
+
     return await this.cultivoRepo.find({
-      where: [{ estado: 'vegetativo' }, { estado: 'floracion' }, { estado: 'cosecha' }, { estado: 'esqueje' }],
-      relations: ['sala', 'cama', 'variedades', 'plantas', 'nutricionSemanal', 'medioCultivo'],
+      where: faseFinalizado ? { faseId: Not(faseFinalizado.id) } : {},
+      relations: ['sala', 'cama', 'variedades', 'plantas', 'nutricionSemanal', 'medioCultivo', 'faseActual'],
       order: { creado_en: 'DESC' }
     })
   }
@@ -92,7 +94,10 @@ export class CultivosService {
         'nutricionSemanal',
         'nutricionSemanal.productos',
         'nutricionSemanal.productos.productoNutricion',
-        'medioCultivo'
+        'medioCultivo',
+        'faseActual',
+        'historialFases',
+        'historialFases.fase'
       ]
     })
     if (!cultivo) {
@@ -106,33 +111,28 @@ export class CultivosService {
     const cultivo = await this.findOne(id)
 
     if (updateData.salaId && updateData.salaId !== cultivo.salaId) {
-      const sala = await this.salaRepo.findOne({ where: { id: updateData.salaId } })
-      if (!sala) {
-        throw new NotFoundException(`Sala con ID ${updateData.salaId} no encontrada`)
-      }
+      await this.salasService.findOne(updateData.salaId)
     }
 
     if (updateData.camaId && updateData.camaId !== cultivo.camaId) {
-      const cama = await this.salaRepo.manager.getRepository(Cama).findOne({ where: { id: updateData.camaId } })
+      const sala = await this.salasService.findOne(cultivo.salaId)
+      const cama = sala.camas?.find(c => c.id === updateData.camaId)
       if (!cama) {
-        throw new NotFoundException(`Cama con ID ${updateData.camaId} no encontrada`)
+        throw new NotFoundException(`Cama con ID ${updateData.camaId} no encontrada en la sala`)
       }
     }
 
     if (updateData.medioCultivoId && updateData.medioCultivoId !== cultivo.medioCultivoId) {
-      const medio = await this.medioCultivoRepo.findOne({ where: { id: updateData.medioCultivoId } })
+      const medio = await this.mediosCultivoService.findOne(updateData.medioCultivoId)
       if (!medio) {
         throw new NotFoundException(`Medio de cultivo con ID ${updateData.medioCultivoId} no encontrado`)
       }
     }
 
     if (variedadIds) {
-      const variedades = await this.variedadRepo.find({
-        where: { id: In(variedadIds) }
-      })
-      if (variedades.length !== variedadIds.length) {
-        throw new NotFoundException('Una o más variedades no fueron encontradas')
-      }
+      const variedades = await Promise.all(
+        variedadIds.map(vId => this.variedadService.findOne(vId))
+      )
       cultivo.variedades = variedades
     }
 
@@ -145,11 +145,47 @@ export class CultivosService {
     await this.cultivoRepo.remove(cultivo)
   }
 
-  // Métodos auxiliares para otros módulos si es necesario (ej. para actualizar contador de plantas)
   async updatePlantCount(id: number, increment: number): Promise<void> {
     const cultivo = await this.findOne(id)
     await this.cultivoRepo.update(id, {
       cantidad_plantas: Math.max(0, (cultivo.cantidad_plantas || 0) + increment)
     })
+  }
+
+  async transicionarFase(cultivoId: number, dto: CambiarFaseDto): Promise<Cultivo> {
+    const { nuevaFaseId, notas } = dto
+    const cultivo = await this.cultivoRepo.findOne({ where: { id: cultivoId } })
+    if (!cultivo) {
+      throw new NotFoundException(`Cultivo con ID ${cultivoId} no encontrado`)
+    }
+
+    const nuevaFase = await this.fasesService.findOne(nuevaFaseId)
+
+    await this.historialService.cerrarActivo(cultivoId)
+    await this.historialService.crear({
+      cultivoId,
+      faseId: nuevaFaseId,
+      fecha_inicio: new Date(),
+      notas
+    })
+
+    // 3. Actualizar el cultivo
+    cultivo.faseId = nuevaFaseId
+
+    // Actualizar también el enum legacy por compatibilidad
+    const slugToEstado: Record<string, any> = {
+      'esqueje': 'esqueje',
+      'vegetativo': 'vegetativo',
+      'floracion': 'floracion',
+      'cosecha': 'cosecha',
+      'finalizado': 'finalizado'
+    }
+    if (slugToEstado[nuevaFase.slug]) {
+      cultivo.estado = slugToEstado[nuevaFase.slug]
+    }
+
+    await this.cultivoRepo.save(cultivo)
+
+    return this.findOne(cultivoId)
   }
 }

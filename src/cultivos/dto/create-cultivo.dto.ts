@@ -41,8 +41,9 @@ export class CreateCultivoDto {
   fecha_fin?: string
 
   @IsOptional()
-  @IsEnum(['esqueje', 'vegetativo', 'floracion', 'cosecha', 'finalizado'])
-  estado?: 'esqueje' | 'vegetativo' | 'floracion' | 'cosecha' | 'finalizado'
+  @IsNumber()
+  @ApiProperty({ description: 'ID de la fase inicial', example: 1, required: false })
+  faseId?: number
 
   @IsOptional()
   @IsNumber()

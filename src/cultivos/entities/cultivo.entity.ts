@@ -62,6 +62,16 @@ export class Cultivo {
   @Column({ type: 'date', nullable: true })
   fecha_fin?: Date
 
+  @Column({ nullable: true })
+  faseId: number
+
+  @ManyToOne('FaseCultivo', (f: any) => f.cultivos)
+  @JoinColumn({ name: 'faseId' })
+  faseActual: any
+
+  @OneToMany('CultivoFaseHistorial', (h: any) => h.cultivo)
+  historialFases: any[]
+
   @Column({
     type: 'enum',
     enum: ['esqueje', 'vegetativo', 'floracion', 'cosecha', 'finalizado'],

@@ -30,6 +30,8 @@ import { SalasModule } from './salas/salas.module'
 import { SensoresModule } from './sensores/sensores.module'
 import { UsuarioModule } from './usuario/usuario.module'
 import { VariedadModule } from './variedad/variedad.module'
+import { FasesModule } from './fases/fases.module'
+import { CultivoFasesHistorialModule } from './cultivo-fases-historial/cultivo-fases-historial.module'
 
 @Module({
   imports: [
@@ -64,7 +66,9 @@ import { VariedadModule } from './variedad/variedad.module'
     ReglasModule,
     SalasModule,
     SensoresModule,
-    VariedadModule
+    VariedadModule,
+    FasesModule,
+    CultivoFasesHistorialModule
   ],
   controllers: [AppController],
   providers: [AppService]
