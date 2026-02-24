@@ -11,4 +11,19 @@ export class CambiarFaseDto {
     @IsOptional()
     @IsString()
     notas?: string
+
+    @ApiProperty({ description: 'ID de la nueva sala (opcional)', required: false, example: 1 })
+    @IsOptional()
+    @IsNumber()
+    salaId?: number
+
+    @ApiProperty({ description: 'ID de la nueva cama (opcional)', required: false, example: 1 })
+    @IsOptional()
+    @IsNumber()
+    camaId?: number
+
+    @ApiProperty({ description: 'ID del nuevo medio de cultivo (opcional)', required: false, example: 1 })
+    @IsOptional()
+    @IsNumber()
+    medioCultivoId?: number
 }

@@ -78,6 +78,13 @@ export class CultivosController {
   @ApiResponse({ status: 200, description: 'Fase actualizada exitosamente' })
   async transicionar(@Param('id', ParseIntPipe) id: number, @Body() dto: CambiarFaseDto) {
     return this.cultivosService.transicionarFase(id, dto)
+  }
 
+  @Get(':id/timeline')
+  @ApiOperation({ summary: 'Obtener línea de tiempo completa del cultivo' })
+  @ApiParam({ name: 'id', description: 'ID del cultivo', type: Number })
+  @ApiResponse({ status: 200, description: 'Línea de tiempo de eventos (nutrición, plagas, fases)' })
+  getTimeline(@Param('id', ParseIntPipe) id: number) {
+    return this.cultivosService.getTimeline(id)
   }
 }

@@ -1,5 +1,8 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
+
+import { NutricionModule } from '../nutricion/nutricion.module'
+import { ControlPlagasModule } from '../control-plagas/control-plagas.module'
 
 import { Sala } from '../salas/entities/sala.entity'
 import { Variedad } from '../variedad/entities/variedad.entity'
@@ -20,7 +23,9 @@ import { CultivoFasesHistorialModule } from '../cultivo-fases-historial/cultivo-
     MediosCultivoModule,
     SalasModule,
     FasesModule,
-    CultivoFasesHistorialModule
+    CultivoFasesHistorialModule,
+    forwardRef(() => NutricionModule),
+    ControlPlagasModule
   ],
   controllers: [CultivosController],
   providers: [CultivosService],

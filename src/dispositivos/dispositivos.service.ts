@@ -14,7 +14,7 @@ import { Dispositivo } from './entities/dispositivo.entity'
 @Injectable()
 export class DispositivosService {
   constructor(
-    @InjectRepository(Dispositivo) private repo: Repository<Dispositivo>,
+    @InjectRepository(Dispositivo) public repo: Repository<Dispositivo>,
     private logger: LoggerService,
     private lecturasService: LecturasService
   ) {

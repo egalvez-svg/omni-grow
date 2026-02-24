@@ -29,4 +29,12 @@ export class CultivoFasesHistorialService {
             await this.historialRepo.save(activo)
         }
     }
+
+    async findAllByCultivo(cultivoId: number): Promise<CultivoFaseHistorial[]> {
+        return await this.historialRepo.find({
+            where: { cultivoId },
+            relations: ['fase'],
+            order: { fecha_inicio: 'ASC' }
+        })
+    }
 }

@@ -11,6 +11,9 @@ export class FaseCultivo {
     @Column({ length: 50, unique: true })
     slug: string
 
+    @Column({ length: 50, nullable: true })
+    mapeo_estado?: string
+
     @Column({ type: 'text', nullable: true })
     descripcion?: string
 

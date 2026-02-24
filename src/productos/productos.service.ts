@@ -11,7 +11,7 @@ export class ProductosService {
   constructor(
     @InjectRepository(ProductoNutricion)
     private readonly productoRepo: Repository<ProductoNutricion>
-  ) {}
+  ) { }
 
   async create(dto: CreateProductoNutricionDto): Promise<ProductoNutricion> {
     const producto = this.productoRepo.create(dto)
@@ -20,11 +20,18 @@ export class ProductosService {
 
   async findAll(soloActivos = false): Promise<ProductoNutricion[]> {
     const where = soloActivos ? { activo: true } : {}
-    return await this.productoRepo.find({ where, order: { nombre: 'ASC' } })
+    return await this.productoRepo.find({
+      where,
+      relations: ['tipo'],
+      order: { nombre: 'ASC' }
+    })
   }
 
   async findOne(id: number): Promise<ProductoNutricion> {
-    const producto = await this.productoRepo.findOne({ where: { id } })
+    const producto = await this.productoRepo.findOne({
+      where: { id },
+      relations: ['tipo']
+    })
     if (!producto) {
       throw new NotFoundException(`Producto con ID ${id} no encontrado`)
     }

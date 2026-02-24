@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, forwardRef } from '@nestjs/common'
 import { TypeOrmModule } from '@nestjs/typeorm'
 
 import { ProductosModule } from '../productos/productos.module'
@@ -13,7 +13,7 @@ import { CultivoFasesHistorialModule } from '../cultivo-fases-historial/cultivo-
   imports: [
     TypeOrmModule.forFeature([NutricionSemanal, ProductoRiego]),
     ProductosModule,
-    CultivosModule,
+    forwardRef(() => CultivosModule),
     CultivoFasesHistorialModule
   ],
   controllers: [NutricionController],
