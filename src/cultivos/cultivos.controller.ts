@@ -5,12 +5,13 @@ import { JwtAuthGuard } from '../shared'
 import { CultivosService } from './cultivos.service'
 import { CreateCultivoDto } from './dto/create-cultivo.dto'
 import { UpdateCultivoDto } from './dto/update-cultivo.dto'
+import { CambiarFaseDto } from './dto/cambiar-fase.dto'
 
 @ApiTags('Cultivos')
 @Controller('cultivos')
 @UseGuards(JwtAuthGuard)
 export class CultivosController {
-  constructor(private readonly cultivosService: CultivosService) {}
+  constructor(private readonly cultivosService: CultivosService) { }
 
   @Post()
   @ApiOperation({ summary: 'Crear un nuevo cultivo' })
@@ -69,5 +70,21 @@ export class CultivosController {
   async remove(@Param('id', ParseIntPipe) id: number) {
     await this.cultivosService.remove(id)
     return { message: 'Cultivo eliminado exitosamente' }
+  }
+
+  @Post(':id/transicion')
+  @ApiOperation({ summary: 'Cambiar fase/etapa del cultivo' })
+  @ApiParam({ name: 'id', description: 'ID del cultivo', type: Number })
+  @ApiResponse({ status: 200, description: 'Fase actualizada exitosamente' })
+  async transicionar(@Param('id', ParseIntPipe) id: number, @Body() dto: CambiarFaseDto) {
+    return this.cultivosService.transicionarFase(id, dto)
+  }
+
+  @Get(':id/timeline')
+  @ApiOperation({ summary: 'Obtener línea de tiempo completa del cultivo' })
+  @ApiParam({ name: 'id', description: 'ID del cultivo', type: Number })
+  @ApiResponse({ status: 200, description: 'Línea de tiempo de eventos (nutrición, plagas, fases)' })
+  getTimeline(@Param('id', ParseIntPipe) id: number) {
+    return this.cultivosService.getTimeline(id)
   }
 }

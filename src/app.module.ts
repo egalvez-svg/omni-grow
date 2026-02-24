@@ -8,6 +8,7 @@ import { AppService } from './app.service'
 import { AuthModule } from './auth/auth.module'
 import { CamasModule } from './camas/camas.module'
 import { ClimaModule } from './clima/clima.module'
+import { ControlPlagasModule } from './control-plagas/control-plagas.module'
 import databaseConfig from './config/database.config'
 import redisConfig from './config/redis.config'
 import { CultivosModule } from './cultivos/cultivos.module'
@@ -22,6 +23,7 @@ import { ModulosModule } from './modulos/modulos.module'
 import { MqttModule } from './mqtt/mqtt.module'
 import { NutricionModule } from './nutricion/nutricion.module'
 import { PlantasModule } from './plantas/plantas.module'
+import { ProductosTiposModule } from './productos-tipos/productos-tipos.module'
 import { ProductosModule } from './productos/productos.module'
 import { RedisModule } from './redis/redis.module'
 import { ReglasModule } from './reglas/reglas.module'
@@ -30,6 +32,8 @@ import { SalasModule } from './salas/salas.module'
 import { SensoresModule } from './sensores/sensores.module'
 import { UsuarioModule } from './usuario/usuario.module'
 import { VariedadModule } from './variedad/variedad.module'
+import { FasesModule } from './fases/fases.module'
+import { CultivoFasesHistorialModule } from './cultivo-fases-historial/cultivo-fases-historial.module'
 
 @Module({
   imports: [
@@ -51,6 +55,7 @@ import { VariedadModule } from './variedad/variedad.module'
     ActuadoresModule,
     CamasModule,
     ClimaModule,
+    ControlPlagasModule,
     CultivosModule,
     DispositivosModule,
     GpioModule,
@@ -59,12 +64,15 @@ import { VariedadModule } from './variedad/variedad.module'
     MediosCultivoModule,
     NutricionModule,
     PlantasModule,
+    ProductosTiposModule,
     ProductosModule,
     RedisModule,
     ReglasModule,
     SalasModule,
     SensoresModule,
-    VariedadModule
+    VariedadModule,
+    FasesModule,
+    CultivoFasesHistorialModule
   ],
   controllers: [AppController],
   providers: [AppService]

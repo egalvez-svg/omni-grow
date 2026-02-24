@@ -47,7 +47,7 @@ export class IaService {
     return {
       cultivo: {
         nombre: cultivo.nombre,
-        estado: cultivo.estado,
+        estado: cultivo.faseActual ? cultivo.faseActual.nombre : cultivo.estado,
         dias_ciclo: cultivo.dias_ciclo,
         sala: cultivo.sala.nombre,
         medio_cultivo: cultivo.medioCultivo ? cultivo.medioCultivo.nombre : 'No especificado'
@@ -241,7 +241,7 @@ export class IaService {
     return {
       cultivo: {
         nombre: cultivo.nombre,
-        estado: cultivo.estado,
+        estado: cultivo.faseActual ? cultivo.faseActual.nombre : cultivo.estado,
         dias_ciclo: cultivo.dias_ciclo,
         sala: cultivo.sala.nombre,
         medio_cultivo: cultivo.medioCultivo ? cultivo.medioCultivo.nombre : 'No especificado'
@@ -300,7 +300,7 @@ export class IaService {
         return {
           cultivoId: cultivo.id,
           cultivoNombre: cultivo.nombre,
-          estado: cultivo.estado,
+          estado: cultivo.faseActual ? cultivo.faseActual.nombre : (cultivo as any).estado,
           analisis: analisisReciente
             ? {
               id: analisisReciente.id,
@@ -369,7 +369,7 @@ export class IaService {
                 Analiza los siguientes datos registrados en la sala "${snapshot.cultivo.sala}":
                 
                 Cultivo: ${snapshot.cultivo.nombre}
-                Estado actual: ${snapshot.cultivo.estado}
+                Estado actual: ${snapshot.cultivo.estado || 'Desconocido'}
                 Día del ciclo: ${snapshot.cultivo.dias_ciclo}
                 Medio de Cultivo: ${snapshot.cultivo.medio_cultivo}
                 

@@ -1,6 +1,7 @@
-import { Column, CreateDateColumn, Entity, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
+import { Column, CreateDateColumn, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm'
 
 import { ProductoRiego } from '../../nutricion/entities/producto-riego.entity'
+import { ProductoTipo } from '../../productos-tipos/entities/producto-tipo.entity'
 
 @Entity('productos_nutricion')
 export class ProductoNutricion {
@@ -18,6 +19,13 @@ export class ProductoNutricion {
 
   @Column({ default: true })
   activo: boolean
+
+  @Column()
+  tipoId: number
+
+  @ManyToOne(() => ProductoTipo, pt => pt.productos)
+  @JoinColumn({ name: 'tipoId' })
+  tipo: ProductoTipo
 
   @OneToMany(() => ProductoRiego, pr => pr.productoNutricion)
   productosRiego: ProductoRiego[]

@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Inject, Injectable, NotFoundException, forwardRef } from '@nestjs/common'
 import { InjectRepository } from '@nestjs/typeorm'
 import { Repository } from 'typeorm'
 
-import { Cultivo } from '../cultivos/entities/cultivo.entity'
+import { CultivosService } from '../cultivos/cultivos.service'
+import { CultivoFasesHistorialService } from '../cultivo-fases-historial/cultivo-fases-historial.service'
 import { ProductosService } from '../productos/productos.service'
 import { CreateNutricionSemanalDto } from './dto/create-nutricion-semanal.dto'
 import { UpdateNutricionSemanalDto } from './dto/update-nutricion-semanal.dto'
@@ -16,17 +17,15 @@ export class NutricionService {
     private readonly nutricionSemanalRepo: Repository<NutricionSemanal>,
     @InjectRepository(ProductoRiego)
     private readonly productoRiegoRepo: Repository<ProductoRiego>,
-    @InjectRepository(Cultivo)
-    private readonly cultivoRepo: Repository<Cultivo>,
+    @Inject(forwardRef(() => CultivosService))
+    private readonly cultivosService: CultivosService,
+    private readonly historialService: CultivoFasesHistorialService,
     private readonly productosService: ProductosService
-  ) {}
+  ) { }
 
   async addNutricionSemanal(cultivoId: number, dto: CreateNutricionSemanalDto): Promise<NutricionSemanal> {
     // Validar que el cultivo existe
-    const cultivo = await this.cultivoRepo.findOne({ where: { id: cultivoId } })
-    if (!cultivo) {
-      throw new NotFoundException(`Cultivo con ID ${cultivoId} no encontrado`)
-    }
+    const cultivo = await this.cultivosService.findOne(cultivoId)
 
     // Validar que todos los productos existen
     if (dto.productos) {
@@ -44,6 +43,9 @@ export class NutricionService {
       semana = Math.floor(diffTime / (1000 * 60 * 60 * 24 * 7)) + 1
     }
 
+    // Buscar fase activa para vincular el historial
+    const historialActivo = await this.historialService.getActivo(cultivoId)
+
     const nutricion = this.nutricionSemanalRepo.create({
       cultivoId,
       semana: semana,
@@ -52,7 +54,8 @@ export class NutricionService {
       ph: dto.ph,
       ec: dto.ec,
       tipo_riego: dto.tipo_riego ?? 'nutricion',
-      notas: dto.notas
+      notas: dto.notas,
+      faseHistorialId: historialActivo?.id
     })
 
     const savedNutricion = await this.nutricionSemanalRepo.save(nutricion)

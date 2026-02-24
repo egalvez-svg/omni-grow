@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsBoolean, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator'
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength } from 'class-validator'
 
 export class CreateProductoNutricionDto {
   @ApiProperty({ example: 'FloraGro', description: 'Nombre del producto' })
@@ -23,4 +23,9 @@ export class CreateProductoNutricionDto {
   @IsOptional()
   @IsBoolean()
   activo?: boolean
+
+  @ApiProperty({ example: 1, description: 'ID del tipo de producto' })
+  @IsNotEmpty()
+  @IsNumber()
+  tipoId: number
 }

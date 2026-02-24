@@ -15,6 +15,7 @@ import {
 import { Cama } from '../../camas/entities/cama.entity'
 import { MedioCultivo } from '../../medios-cultivo/entities/medio-cultivo.entity'
 import { NutricionSemanal } from '../../nutricion/entities/nutricion-semanal.entity'
+import { ControlPlaga } from '../../control-plagas/entities/control-plaga.entity'
 import { PlantaPosicion } from '../../plantas/entities/planta-posicion.entity'
 import { Sala } from '../../salas/entities/sala.entity'
 import { Variedad } from '../../variedad/entities/variedad.entity'
@@ -62,6 +63,16 @@ export class Cultivo {
   @Column({ type: 'date', nullable: true })
   fecha_fin?: Date
 
+  @Column({ nullable: true })
+  faseId: number
+
+  @ManyToOne('FaseCultivo', (f: any) => f.cultivos)
+  @JoinColumn({ name: 'faseId' })
+  faseActual: any
+
+  @OneToMany('CultivoFaseHistorial', (h: any) => h.cultivo)
+  historialFases: any[]
+
   @Column({
     type: 'enum',
     enum: ['esqueje', 'vegetativo', 'floracion', 'cosecha', 'finalizado'],
@@ -80,6 +91,9 @@ export class Cultivo {
 
   @OneToMany(() => NutricionSemanal, n => n.cultivo)
   nutricionSemanal: NutricionSemanal[]
+
+  @OneToMany(() => ControlPlaga, cp => cp.cultivo)
+  controlPlaga: ControlPlaga[]
 
   @CreateDateColumn({ type: 'timestamp' })
   creado_en: Date

@@ -5,7 +5,7 @@ import { ClimaService } from './clima.service'
 @ApiTags('Clima')
 @Controller('clima')
 export class ClimaController {
-  constructor(private readonly climaService: ClimaService) {}
+  constructor(private readonly climaService: ClimaService) { }
 
   @Get()
   @ApiOperation({ summary: 'Obtener el clima actual' })
